@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to APP2</title>
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(to right, #8e44ad, #3498db);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        nav .nav-link {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        nav .nav-link:hover {
+            background-color: #c0392b;
+        }
+
+        main {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+
+        main h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Welcome to App2</h1>
+    </header>
+    <nav>
+        <a href="../../home.html" class="nav-link">Home</a>
+        <button id="logout" class="nav-link">Logout</button>
+    </nav>
+    <main>
+        <h2 id="welcome-message">Hello, <span id="username">Loading...</span>!</h2>
+    </main>
+    <footer>Powered by Keycloak SSO</footer>
+
+    <script>
+        // Keycloak Configuration
+        const keycloak = new Keycloak({
+            url: 'https://nforce-haud-vm-ub22-development29.devenv.haud.report', // Keycloak server URL
+            realm: 'sso-poc', // Realm name
+            clientId: 'app2' // Client ID
+        });
+
+        // Initialize Keycloak
+        keycloak.init({
+            checkLoginIframe: false, // Disables iframe silent token refresh
+            onLoad: 'login-required', // Check if the user is already logged in
+            // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html', // Silent SSO check
+            pkceMethod: 'S256' // Enable PKCE for security
+        }).then(authenticated => {
+            if (authenticated) {
+                // Set the username after successful login
+                document.getElementById('username').innerText = keycloak.tokenParsed ? keycloak.tokenParsed.preferred_username : 'Unknown User';
+            } else {
+                // Redirect to home page if not authenticated
+                window.location.href = '../../home.html';
+            }
+        }).catch(error => {
+            console.error('Keycloak initialization error:', error);
+            document.getElementById('welcome-message').innerText = 'Error initializing Keycloak!';
+        });
+
+        // Logout functionality
+        document.getElementById('logout').addEventListener('click', () => {
+            keycloak.logout({
+                redirectUri: 'http://127.0.0.1:8000/home.html' // Redirect to home page after logout
+            });
+        });
+    </script>
+</body>
+
+</html>

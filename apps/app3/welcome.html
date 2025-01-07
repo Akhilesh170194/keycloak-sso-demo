@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #4ec8c8, #8fc1fb);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+        }
+
+        p {
+            font-size: 1.5em;
+            margin-bottom: 1em;
+        }
+
+        .button-container {
+            margin-top: 1em;
+        }
+
+        .button-container button,
+        .button-container a {
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1em;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-container button:hover,
+        .button-container a:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.9em;
+            color: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to the App3</h1>
+    <p id="username">Loading user information...</p>
+    <div class="button-container">
+        <a href="../../home.html">Home</a>
+        <button id="logout">Logout</button>
+    </div>
+
+    <footer>Powered by Keycloak SSO</footer>
+
+    <script>
+        // Keycloak Configuration
+        const keycloak = new Keycloak({
+            url: 'https://nforce-haud-vm-ub22-development29.devenv.haud.report', // Keycloak server URL
+            realm: 'sso-poc', // Realm name
+            clientId: 'app3' // Client ID
+        });
+
+        // Initialize Keycloak
+        keycloak.init({
+            checkLoginIframe: false, // Disables iframe silent token refresh
+            onLoad: 'login-required', // Check if the user is already logged in
+            // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html', // Silent SSO check
+            pkceMethod: 'S256' // Enable PKCE for security
+        }).then(authenticated => {
+            if (authenticated) {
+                // Set the username after successful login
+                document.getElementById('username').innerText = keycloak.tokenParsed ? keycloak.tokenParsed.preferred_username : 'Unknown User';
+            } else {
+                // Redirect to home page if not authenticated
+                window.location.href = '../../home.html';
+            }
+        }).catch(error => {
+            console.error('Keycloak initialization error:', error);
+            document.getElementById('welcome-message').innerText = 'Error initializing Keycloak!';
+        });
+
+        // Logout functionality
+        document.getElementById('logout').addEventListener('click', () => {
+            keycloak.logout({
+                redirectUri: 'http://127.0.0.1:8000/home.html' // Redirect to home page after logout
+            });
+        });
+    </script>
+</body>
+
+</html>

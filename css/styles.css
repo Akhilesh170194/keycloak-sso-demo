@@ -1,0 +1,131 @@
+/* Reset and Base Styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background: linear-gradient(to bottom, #e0e7ff, #f5f5f5);
+    color: #333;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: #333;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 28px;
+    letter-spacing: 1px;
+}
+
+nav {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.nav-link {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #007BFF;
+    color: white;
+}
+
+main {
+    text-align: center;
+}
+
+main h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.apps {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.app-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #007BFF;
+    color: white;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 18px;
+    width: 120px;
+    height: 120px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+}
+
+.app-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    background: #0056b3;
+}
+
+.app-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: auto;
+    border-radius: 8px;
+}
+
+/* Ensure proper alignment for navigation links in app pages */
+header nav {
+    text-align: center;
+    margin-top: 10px;
+}
+
+header nav a {
+    color: #fff; /* Matches the header text color */
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background-color: #007BFF; /* Adds button-like appearance */
+    margin: 5px;
+}
+
+header nav a:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+    color: #fff;
+}

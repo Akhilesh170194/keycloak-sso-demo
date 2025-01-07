@@ -15,9 +15,9 @@ This project demo the Single Sign On using Keycloak.
 
 ## How to Run
 
-1. Place the project files in a web server (e.g., Python HTTP server).
-2. Replace Keycloak configuration values in `index.html` and `welcome.html`.
-3. Open `index.html` in a browser.
+1. Go to the `keycloak-sso-demo` directory.
+2. Run `python -m http-server <port>` to start the http server.
+3. Access the home page `http://127.0.0.1:<port>/home.html`.
 
 ## Project Structure
 

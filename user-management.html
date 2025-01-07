@@ -145,11 +145,13 @@
             <p>© 2025 SSO Portal | All Rights Reserved</p>
         </footer>
     </div>
-    <script>
+    <script type="module">
+        import { keycloakConfig } from '../../config.js';
+
         const keycloak = new Keycloak({
-            url: 'https://nforce-haud-vm-ub22-development29.devenv.haud.report',
-            realm: 'sso-poc',
-            clientId: 'app1'
+            url: keycloakConfig.url, // Keycloak server URL
+            realm: keycloakConfig.realm, // Realm name
+            clientId: keycloakConfig.app1_client_id // Client ID
         });
 
         keycloak.init({
@@ -167,7 +169,7 @@
 
         async function fetchKeycloakUsers() {
             try {
-                const response = await fetch(`https://nforce-haud-vm-ub22-development29.devenv.haud.report/admin/realms/${keycloak.realm}/users`, {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/users`, {
                     headers: { Authorization: `Bearer ${keycloak.token}` }
                 });
 
@@ -182,7 +184,7 @@
                         <td>${user.id}</td>
                         <td>${user.username}</td>
                         <td>${user.email || 'N/A'}</td>
-                        <td>${user.firstName || 'N/A'}</td>
+                        <td>${user.firstName || 'N/A'} ${user.lastName}</td>
                     </tr>`;
                     tableBody.innerHTML += row;
                 });

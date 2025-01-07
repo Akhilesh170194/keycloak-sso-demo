@@ -9,11 +9,13 @@
     <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
 </head>
 <body>
-    <script>
+    <script type="module">
+        import { keycloakConfig } from '../../config.js';
+
         const keycloak = new Keycloak({
-            url: 'https://nforce-haud-vm-ub22-development29.devenv.haud.report', // Keycloak server URL
-            realm: 'sso-poc', // Realm name
-            clientId: 'app1' // Client ID
+            url: keycloakConfig.url, // Keycloak server URL
+            realm: keycloakConfig.realm, // Realm name
+            clientId: keycloakConfig.app1_client_id // Client ID
         });
 
         keycloak.init({

@@ -8,6 +8,11 @@ This project demo the Single Sign On using Keycloak.
 - Displays a welcome message after successful login.
 - Provides a logout option.
 
+## Prerequisite
+
+- A keycloak Server.
+- Create
+
 ## How to Run
 
 1. Place the project files in a web server (e.g., Python HTTP server).

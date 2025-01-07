@@ -104,19 +104,19 @@
         </footer>
     </div>
 
-    <script>
-        // Keycloak Configuration
+    <script type="module">
+        import { keycloakConfig } from '../../config.js';
+
         const keycloak = new Keycloak({
-            url: 'https://nforce-haud-vm-ub22-development29.devenv.haud.report', // Keycloak server URL
-            realm: 'sso-poc', // Realm name
-            clientId: 'app1' // Client ID
+            url: keycloakConfig.url, // Keycloak server URL
+            realm: keycloakConfig.realm, // Realm name
+            clientId: keycloakConfig.app1_client_id // Client ID
         });
 
         // Initialize Keycloak
         keycloak.init({
             checkLoginIframe: false, // Disables iframe silent token refresh
             onLoad: 'login-required', // Check if the user is already logged in
-            // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html', // Silent SSO check
             pkceMethod: 'S256' // Enable PKCE for security
         }).then(authenticated => {
             if (authenticated) {

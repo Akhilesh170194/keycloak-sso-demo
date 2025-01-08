@@ -118,8 +118,51 @@
         }
 
         .app-icon {
-            font-size: 40px;
+            font-size: 20px;
             margin-bottom: 10px;
+        }
+
+        .app-icon img {
+            width: 20px;
+            height: 10px;
+            vertical-align: middle;
+        }
+
+        #logout {
+            display: flex;
+            flex-direction: column;
+            /* Stack icon and text vertically */
+            align-items: center;
+            /* Center align the content */
+            justify-content: center;
+            /* Center align within the button */
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            /* Optional border */
+        }
+
+        #logout:hover {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+        }
+
+        #logout img {
+            width: 24px;
+            /* Set fixed size for the icon */
+            height: 24px;
+            margin-bottom: 5px;
+            /* Add space between the icon and text */
+        }
+
+        #logout span {
+            font-size: 14px;
+            font-weight: bold;
         }
 
         footer {
@@ -132,29 +175,44 @@
             border-radius: 8px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
 </head>
 
 <body>
-    <div class="container">
+    <div id="container" class="container" style="display: none;">
         <header>
             <h1>Single Sign-On Portal</h1>
         </header>
         <nav>
-            <a href="home.html" class="nav-link">Home</a>
-            <a href="user-management.html" class="nav-link">User Management</a>
+            <a href="home.html" class="nav-link">
+                <div class="app-icon">🏠</div>
+                <span>Home</span>
+            </a>
+            <a id="user-management" href="user-management.html" class="nav-link" style="display: none;">
+                <div class="app-icon">👤</div>
+                <span>User Management</span>
+            </a>
+            <a id="group-management" href="group-management.html" class="nav-link" style="display: none;">
+                <div class="app-icon">👥</div>
+                <span>Group Management</span>
+            </a>
+            <button id="logout" class="nav-link">
+                <img src="icons/logout.svg" alt="Logout Icon" class="app-icon" />
+                <span>Logout</span>
+            </button>
         </nav>
         <main>
-            <h2>Select an Application</h2>
+            <h2 id="status">Login to the SSO Portal...</h2>
             <div class="apps">
-                <a href="apps/app1/app.html" class="app-button app1">
+                <a id="app1" href="apps/app1/app.html" class="app-button app1" style="display: none;">
                     <div class="app-icon">📂</div>
                     <span>APP1</span>
                 </a>
-                <a href="apps/app2/app.html" class="app-button app2">
+                <a id="app2" href="apps/app2/app.html" class="app-button app2" style="display: none;">
                     <div class="app-icon">📊</div>
                     <span>APP2</span>
                 </a>
-                <a href="apps/app3/app.html" class="app-button app3">
+                <a id="app3" href="apps/app3/app.html" class="app-button app3" style="display: none;">
                     <div class="app-icon">⚙️</div>
                     <span>APP3</span>
                 </a>
@@ -164,6 +222,63 @@
             <p>© 2025 SSO Portal | All Rights Reserved</p>
         </footer>
     </div>
+
+    <!-- Include Keycloak JS -->
+    <script type="module">
+        import { keycloakConfig } from './config.js';
+
+        const keycloak = new Keycloak({
+            url: keycloakConfig.url, // Keycloak server URL
+            realm: keycloakConfig.realm, // Realm name
+            clientId: keycloakConfig.app1_client_id // Client ID
+        });
+
+        // Initialize Keycloak
+        keycloak.init({ onLoad: 'login-required' }).then(authenticated => {
+            if (authenticated) {
+                document.getElementById('status').textContent = `Welcome, ${keycloak.tokenParsed.preferred_username}!`;
+                document.getElementById('container').style.display = 'flex'; // Show apps
+                // Check for the 'platform_user_management' role
+                const hasUserManagementRole = keycloak.hasRealmRole(keycloakConfig.user_management_role);
+                if (hasUserManagementRole) {
+                    document.getElementById('user-management').style.display = 'block'; 
+                }
+
+                console.log('group_management_role: ' + keycloakConfig.group_management_role);
+                const hasGroupManagementRole = keycloak.hasRealmRole(keycloakConfig.group_management_role);
+                if (hasGroupManagementRole) {
+                    document.getElementById('group-management').style.display = 'block'; 
+                }
+
+                const hasApp1Permission = keycloak.hasRealmRole(keycloakConfig.app1_enabled_role);
+                if (hasApp1Permission) {
+                    document.getElementById('app1').style.display = 'flex'; 
+                }
+
+                const hasApp2Permission = keycloak.hasRealmRole(keycloakConfig.app2_enabled_role);
+                if (hasApp2Permission) {
+                    document.getElementById('app2').style.display = 'flex'; 
+                }
+
+                const hasApp3Permission = keycloak.hasRealmRole(keycloakConfig.app3_enabled_role);
+                if (hasApp3Permission) {
+                    document.getElementById('app3').style.display = 'flex'; 
+                }
+            } else {
+                document.getElementById('status').textContent = 'Authentication failed. Please refresh.';
+            }
+        }).catch(error => {
+            console.error('Keycloak initialization failed:', error);
+            document.getElementById('status').textContent = 'SSO initialization failed. Please contact support.';
+        });
+
+        // Logout functionality
+        document.getElementById('logout').addEventListener('click', () => {
+            keycloak.logout({
+                redirectUri: 'http://127.0.0.1:8000/home.html' // Redirect to home page after logout
+            });
+        });
+    </script>
 </body>
 
 </html>

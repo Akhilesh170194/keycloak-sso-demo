@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management</title>
+    <title>Group Management</title>
     <style>
         body {
             font-family: 'Roboto', Arial, sans-serif;
@@ -61,7 +61,7 @@
             color: white;
         }
 
-        table#userTable {
+        table#groupTable {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
@@ -71,23 +71,23 @@
             overflow: hidden;
         }
 
-        table#userTable thead {
+        table#groupTable thead {
             background-color: #007BFF;
             color: white;
         }
 
-        table#userTable th,
-        table#userTable td {
+        table#groupTable th,
+        table#groupTable td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
 
-        table#userTable tbody tr:hover {
+        table#groupTable tbody tr:hover {
             background-color: #f1f1f1;
         }
 
-        table#userTable tbody tr:last-child td {
+        table#groupTable tbody tr:last-child td {
             border-bottom: none;
         }
 
@@ -138,28 +138,27 @@
 <body>
     <div class="container">
         <header>
-            <h1>User Management</h1>
+            <h1>Group Management</h1>
         </header>
         <nav>
-            <a href="home.html" class="nav-link">Home</a>
+            <a href="./home.html" class="nav-link">Home</a>
             <button id="logout" class="nav-link">Logout</button>
         </nav>
         <main>
-            <h2>Keycloak Users</h2>
-            <table id="userTable">
+            <h2>Keycloak Groups</h2>
+            <table id="groupTable">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>First Name</th>
-                        <th>Groups</th>
-                        <th>Roles</th>
+                        <th>Name</th>
+                        <th>Path</th>
+                        <th>Realm Roles</th>
+                        <th>Client Roles</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td colspan="4" class="placeholder">Loading users...</td>
+                        <td colspan="4" class="placeholder">Loading groups...</td>
                     </tr>
                 </tbody>
             </table>
@@ -184,93 +183,89 @@
             checkLoginIframe: false
         }).then(authenticated => {
             if (authenticated) {
-                fetchKeycloakUsers();
+                fetchKeycloakGroups();
             } else {
                 keycloak.login();
             }
         }).catch(error => console.error('Keycloak initialization error:', error));
 
-        async function fetchKeycloakUsers() {
+        async function fetchGroupRealmRolesAndClientRoles(groupId) {
             try {
-                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/users`, {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups/${groupId}/role-mappings`, {
                     headers: { Authorization: `Bearer ${keycloak.token}` }
                 });
 
-                if (!response.ok) throw new Error(`Failed to fetch users: ${response.statusText}`);
-
-                const users = await response.json();
-                const tableBody = document.querySelector('#userTable tbody');
-                tableBody.innerHTML = ''; // Clear placeholder
-
-                for (const user of users) {
-                    // Fetch groups and roles for each user
-                    const groups = await fetchUserGroups(user.id);
-                    const roles = await fetchUserRoles(user.id);
-
-                    const row = `<tr>
-                        <td>${user.id}</td>
-                        <td>${user.username}</td>
-                        <td>${user.email || 'N/A'}</td>
-                        <td>${user.firstName || 'N/A'} ${user.lastName || ''}</td>
-                        <td>
-                            <div class="scrollable-list">${groups}</div>
-                        </td>
-                        <td>
-                            <div class="scrollable-list">${roles}</div>
-                        </td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                }
-            } catch (error) {
-                console.error('Error fetching Keycloak users:', error);
-            }
-        }
-
-        async function fetchUserGroups(userId) {
-            try {
-                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/users/${userId}/groups`, {
-                    headers: { Authorization: `Bearer ${keycloak.token}` }
-                });
-
-                if (!response.ok) throw new Error(`Failed to fetch groups for user ${userId}: ${response.statusText}`);
-
-                const groups = await response.json();
-                return groups.length > 0 ? generateList(data) : 'No Groups';
-            } catch (error) {
-                console.error(`Error fetching groups for user ${userId}:`, error);
-                return 'Error fetching groups';
-            }
-        }
-
-        async function fetchUserRoles(userId) {
-            try {
-                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/users/${userId}/role-mappings`, {
-                    headers: { Authorization: `Bearer ${keycloak.token}` }
-                });
-
-                if (!response.ok) throw new Error(`Failed to fetch roles for user ${userId}: ${response.statusText}`);
+                if (!response.ok) throw new Error(`Failed to fetch roles for group ${groupId}: ${response.statusText}`);
 
                 const data = await response.json();
-                const realmRoles = data.realmMappings
-                    ? data.realmMappings.map(role => `<li>${role.name}</li>`).join('')
-                    : '';
-                const clientRoles = data.clientMappings
-                    ? Object.entries(data.clientMappings).flatMap(([clientId, clientData]) =>
-                        clientData.mappings.map(role => `<li>${role.name} (${clientId})</li>`)
-                    ).join('')
-                    : '';
 
-                const roleList = `<ul>${realmRoles}${clientRoles}</ul>`;
-                return roleList || 'No Roles';
+                // Parse Realm Roles
+                const realmRoles = data.realmMappings
+                    ? data.realmMappings.map(role => role.name)
+                    : [];
+
+                // Parse Client Roles
+                const clientRoles = [];
+                if (data.clientMappings) {
+                    Object.entries(data.clientMappings).forEach(([clientId, clientData]) => {
+                        const roles = clientData.mappings.map(role => `${role.name} (${clientId})`);
+                        clientRoles.push(...roles);
+                    });
+                }
+
+                return { realmRoles, clientRoles };
             } catch (error) {
-                console.error(`Error fetching roles for user ${userId}:`, error);
-                return 'Error fetching roles';
+                console.error(`Error fetching roles for group ${groupId}:`, error);
+                return { realmRoles: [], clientRoles: [] };
             }
         }
 
         function generateList(items) {
             const listItems = items.map(item => `<li>${item}</li>`); // Generate array of <li> elements
             return `<ul>${listItems.join('')}</ul>`; // Join <li> elements into a single <ul>
+        }
+
+        async function fetchKeycloakGroups() {
+            try {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups`, {
+                    headers: { Authorization: `Bearer ${keycloak.token}` }
+                });
+
+                if (!response.ok) throw new Error(`Failed to fetch groups: ${response.statusText}`);
+
+                const groups = await response.json();
+                const tableBody = document.querySelector('#groupTable tbody');
+                tableBody.innerHTML = ''; // Clear placeholder
+
+                for (const group of groups) {
+                    const { realmRoles, clientRoles } = await fetchGroupRealmRolesAndClientRoles(group.id);
+
+                    const realmRoleList = realmRoles.length > 0
+                        ? generateList(realmRoles)
+                        : 'No Realm Roles';
+
+                    const clientRoleList = clientRoles.length > 0
+                        ? generateList(clientRoles)
+                        : 'No Client Roles';
+
+                    const row = `<tr>
+                        <td>${group.id}</td>
+                        <td>${group.name}</td>
+                        <td>${group.path}</td>
+                        <td>
+                            <div class="scrollable-list">${realmRoleList}</div>
+                        </td>
+                        <td>
+                            <div class="scrollable-list">${clientRoleList}</div>
+                        </td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                }
+            } catch (error) {
+                console.error('Error fetching Keycloak groups:', error);
+                const tableBody = document.querySelector('#groupTable tbody');
+                tableBody.innerHTML = `<tr><td colspan="5" class="placeholder">Failed to load groups.</td></tr>`;
+            }
         }
 
         document.getElementById('logout').addEventListener('click', () => {

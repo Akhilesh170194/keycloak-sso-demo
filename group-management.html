@@ -5,133 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Group Management</title>
-    <style>
-        body {
-            font-family: 'Roboto', Arial, sans-serif;
-            background: linear-gradient(to bottom, #e0e7ff, #f5f5f5);
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .container {
-            padding: 20px;
-            max-width: 900px;
-            margin: auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: #333;
-            color: #fff;
-            padding: 15px;
-            text-align: center;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 28px;
-            letter-spacing: 1px;
-        }
-
-        nav {
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .nav-link {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #333;
-            font-weight: bold;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .nav-link:hover {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        table#groupTable {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        table#groupTable thead {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        table#groupTable th,
-        table#groupTable td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        table#groupTable tbody tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        table#groupTable tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .placeholder {
-            text-align: center;
-            font-style: italic;
-            color: gray;
-            height: 50px;
-        }
-
-        .scrollable-list {
-            max-height: 100px;
-            overflow-y: auto;
-            padding: 5px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        .scrollable-list ul {
-            list-style: disc;
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .scrollable-list li {
-            margin: 2px 0;
-            font-size: 14px;
-            color: #555;
-        }
-
-        footer {
-            background: #333;
-            color: #fff;
-            text-align: center;
-            padding: 10px 0;
-            margin-top: auto;
-            border-radius: 8px;
-        }
-
-        footer p {
-            margin: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="css/management.css">
     <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
 </head>
 
@@ -145,6 +19,24 @@
             <button id="logout" class="nav-link">Logout</button>
         </nav>
         <main>
+            <div class="form-container">
+                <h3>Create Group</h3>
+                <label for="groupName">Group Name</label>
+                <input type="text" id="groupName" placeholder="Enter group name" required />
+
+                <label for="client">Client</label>
+                <select id="client">
+                    <option value="">Select a client</option>
+                </select>
+
+                <label for="clientRoles">Client Roles</label>
+                <select id="clientRoles" multiple>
+                    <option value="">Select roles</option>
+                </select>
+
+                <button id="createGroupButton">Create Group</button>
+            </div>
+
             <h2>Keycloak Groups</h2>
             <table id="groupTable">
                 <thead>
@@ -171,10 +63,12 @@
         import { keycloakConfig } from './config.js';
 
         const keycloak = new Keycloak({
-            url: keycloakConfig.url, // Keycloak server URL
-            realm: keycloakConfig.realm, // Realm name
-            clientId: keycloakConfig.app1_client_id // Client ID
+            url: keycloakConfig.url,
+            realm: keycloakConfig.realm,
+            clientId: keycloakConfig.app1_client_id
         });
+
+        const clientRolesMap = new Map();
 
         keycloak.init({
             onLoad: 'check-sso',
@@ -184,46 +78,108 @@
         }).then(authenticated => {
             if (authenticated) {
                 fetchKeycloakGroups();
+                loadClients();
             } else {
                 keycloak.login();
             }
         }).catch(error => console.error('Keycloak initialization error:', error));
 
-        async function fetchGroupRealmRolesAndClientRoles(groupId) {
+        async function loadClients() {
             try {
-                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups/${groupId}/role-mappings`, {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/clients`, {
                     headers: { Authorization: `Bearer ${keycloak.token}` }
                 });
+                if (!response.ok) throw new Error('Failed to fetch clients');
 
-                if (!response.ok) throw new Error(`Failed to fetch roles for group ${groupId}: ${response.statusText}`);
+                const clients = await response.json();
+                const clientSelect = document.getElementById('client');
+                clients.filter(client => client.attributes?.['is_visible'] === 'true').forEach(client => {
+                    clientSelect.innerHTML += `<option value="${client.id}">${client.clientId}</option>`;
+                });
 
-                const data = await response.json();
-
-                // Parse Realm Roles
-                const realmRoles = data.realmMappings
-                    ? data.realmMappings.map(role => role.name)
-                    : [];
-
-                // Parse Client Roles
-                const clientRoles = [];
-                if (data.clientMappings) {
-                    Object.entries(data.clientMappings).forEach(([clientId, clientData]) => {
-                        const roles = clientData.mappings.map(role => `${role.name} (${clientId})`);
-                        clientRoles.push(...roles);
-                    });
-                }
-
-                return { realmRoles, clientRoles };
+                clientSelect.addEventListener('change', async () => {
+                    const clientId = clientSelect.value;
+                    await loadClientRoles(clientId);
+                });
             } catch (error) {
-                console.error(`Error fetching roles for group ${groupId}:`, error);
-                return { realmRoles: [], clientRoles: [] };
+                console.error('Error loading clients:', error);
             }
         }
 
-        function generateList(items) {
-            const listItems = items.map(item => `<li>${item}</li>`); // Generate array of <li> elements
-            return `<ul>${listItems.join('')}</ul>`; // Join <li> elements into a single <ul>
+        async function loadClientRoles(clientId) {
+            try {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/clients/${clientId}/roles`, {
+                    headers: { Authorization: `Bearer ${keycloak.token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch client roles');
+
+                const roles = await response.json();
+                const rolesSelect = document.getElementById('clientRoles');
+                rolesSelect.innerHTML = ''; // Clear previous options
+
+                clientRolesMap.clear(); // Clear the map before populating new roles
+
+                roles.forEach(role => {
+                    clientRolesMap.set(role.name, role); // Store the full role object by its name
+                    rolesSelect.innerHTML += `<option value="${role.name}">${role.name}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading client roles:', error);
+            }
         }
+
+        async function checkGroupExists(groupName) {
+            try {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups`, {
+                    headers: { Authorization: `Bearer ${keycloak.token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch groups');
+
+                const groups = await response.json();
+                return groups.some(group => group.name.toLowerCase() === groupName.toLowerCase());
+            } catch (error) {
+                console.error('Error checking if group exists:', error);
+                return false;
+            }
+        }
+
+        async function assignRolesToGroup(groupId, clientId, roles) {
+            try {
+                // Retrieve the full role objects from the clientRolesMap
+                const fullRoles = roles.map(roleName => clientRolesMap.get(roleName));
+
+                if (fullRoles.some(role => !role)) {
+                    throw new Error('Some selected roles could not be found in the role map.');
+                }
+
+                // Send the role mappings request
+                const endpoint = `${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups/${groupId}/role-mappings/clients/${clientId}`;
+                console.log('Assigning roles to group:', { groupId, clientId, roles, endpoint });
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${keycloak.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(fullRoles) // Use full role objects
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error(`Error response from Keycloak: ${response.status} ${response.statusText}`, errorBody);
+                    throw new Error(`Failed to assign roles to group: ${response.statusText}`);
+                }
+
+                console.log('Roles successfully assigned to group');
+            } catch (error) {
+                console.error('Error assigning roles to group:', error);
+                throw error;
+            }
+        }
+
 
         async function fetchKeycloakGroups() {
             try {
@@ -268,9 +224,112 @@
             }
         }
 
+        async function fetchGroupRealmRolesAndClientRoles(groupId) {
+            try {
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups/${groupId}/role-mappings`, {
+                    headers: { Authorization: `Bearer ${keycloak.token}` }
+                });
+
+                if (!response.ok) throw new Error(`Failed to fetch roles for group ${groupId}: ${response.statusText}`);
+
+                const data = await response.json();
+
+                // Parse Realm Roles
+                const realmRoles = data.realmMappings
+                    ? data.realmMappings.map(role => role.name)
+                    : [];
+
+                // Parse Client Roles
+                const clientRoles = [];
+                if (data.clientMappings) {
+                    Object.entries(data.clientMappings).forEach(([clientId, clientData]) => {
+                        const roles = clientData.mappings.map(role => `${role.name} (${clientId})`);
+                        clientRoles.push(...roles);
+                    });
+                }
+
+                return { realmRoles, clientRoles };
+            } catch (error) {
+                console.error(`Error fetching roles for group ${groupId}:`, error);
+                return { realmRoles: [], clientRoles: [] };
+            }
+        }
+
+        function generateList(items) {
+            const listItems = items.map(item => `<li>${item}</li>`); // Generate array of <li> elements
+            return `<ul>${listItems.join('')}</ul>`; // Join <li> elements into a single <ul>
+        }
+
+        document.getElementById('createGroupButton').addEventListener('click', async () => {
+            const groupName = document.getElementById('groupName').value.trim();
+            const client = document.getElementById('client').value;
+            const rolesSelect = document.getElementById('clientRoles');
+            const selectedRoles = Array.from(rolesSelect.selectedOptions).map(option => option.value);
+
+            if (!groupName) {
+                alert('Please fill Group Name!');
+                return;
+            }
+
+            // Check if the group already exists
+            const groupExists = await checkGroupExists(groupName);
+            if (groupExists) {
+                alert(`Group with name "${groupName}" already exists.`);
+                return;
+            }
+
+            try {
+                const groupPayload = {
+                    name: groupName,
+                    attributes: {}
+                };
+
+                const response = await fetch(`${keycloakConfig.url}/admin/realms/${keycloakConfig.realm}/groups`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${keycloak.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(groupPayload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create group');
+                } else if (response.status === 201) {
+                    // Fetch the Location header to get the created group ID
+                    const locationHeader = response.headers.get('Location');
+                    const groupId = locationHeader?.split('/').pop(); // Extract the group ID from the URL
+                    if (groupId) {
+
+                        if (selectedRoles.length > 0) {
+                            await assignRolesToGroup(groupId, client, selectedRoles);
+                        }
+                        alert('Group created successfully');
+
+                        // Clear the form
+                        document.getElementById('groupName').value = '';
+                        document.getElementById('client').value = '';
+                        document.getElementById('clientRoles').innerHTML = '<option value="">Select roles</option>';
+
+                        fetchKeycloakGroups();
+                    } else {
+                        throw new Error('Failed to extract group ID from response');
+                    }
+                } else {
+                    throw new Error(`Failed to create group: ${response.statusText}`);
+                }
+
+            } catch (error) {
+                console.error('Error creating group:', error);
+                alert('Error creating group');
+            }
+        });
+
+
         document.getElementById('logout').addEventListener('click', () => {
             keycloak.logout({ redirectUri: window.location.origin + '/home.html' });
         });
+
     </script>
 </body>
 

@@ -20,6 +20,8 @@
         }
 
         .container {
+            margin: 0 auto;
+            width: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -206,15 +208,15 @@
             <div class="apps">
                 <a id="app1" href="apps/app1/app.html" class="app-button app1" style="display: none;">
                     <div class="app-icon">📂</div>
-                    <span>APP1</span>
+                    <span>New IMS</span>
                 </a>
                 <a id="app2" href="apps/app2/app.html" class="app-button app2" style="display: none;">
                     <div class="app-icon">📊</div>
-                    <span>APP2</span>
+                    <span>Smart Analytics</span>
                 </a>
                 <a id="app3" href="apps/app3/app.html" class="app-button app3" style="display: none;">
                     <div class="app-icon">⚙️</div>
-                    <span>APP3</span>
+                    <span>Flashcalls</span>
                 </a>
             </div>
         </main>
@@ -230,7 +232,7 @@
         const keycloak = new Keycloak({
             url: keycloakConfig.url, // Keycloak server URL
             realm: keycloakConfig.realm, // Realm name
-            clientId: keycloakConfig.app1_client_id // Client ID
+            clientId: keycloakConfig.host_client_id // Client ID
         });
 
         // Initialize Keycloak
@@ -239,30 +241,29 @@
                 document.getElementById('status').textContent = `Welcome, ${keycloak.tokenParsed.preferred_username}!`;
                 document.getElementById('container').style.display = 'flex'; // Show apps
                 // Check for the 'platform_user_management' role
-                const hasUserManagementRole = keycloak.hasRealmRole(keycloakConfig.user_management_role);
+                const hasUserManagementRole = keycloak.hasResourceRole(keycloakConfig.user_management_role, keycloakConfig.host_client_id);
                 if (hasUserManagementRole) {
-                    document.getElementById('user-management').style.display = 'block'; 
+                    document.getElementById('user-management').style.display = 'block';
                 }
 
-                console.log('group_management_role: ' + keycloakConfig.group_management_role);
-                const hasGroupManagementRole = keycloak.hasRealmRole(keycloakConfig.group_management_role);
+                const hasGroupManagementRole = keycloak.hasResourceRole(keycloakConfig.group_management_role, keycloakConfig.host_client_id);
                 if (hasGroupManagementRole) {
-                    document.getElementById('group-management').style.display = 'block'; 
+                    document.getElementById('group-management').style.display = 'block';
                 }
 
-                const hasApp1Permission = keycloak.hasRealmRole(keycloakConfig.app1_enabled_role);
+                const hasApp1Permission = keycloak.hasResourceRole(keycloakConfig.app1_enabled_role, keycloakConfig.host_client_id);
                 if (hasApp1Permission) {
-                    document.getElementById('app1').style.display = 'flex'; 
+                    document.getElementById('app1').style.display = 'flex';
                 }
 
-                const hasApp2Permission = keycloak.hasRealmRole(keycloakConfig.app2_enabled_role);
+                const hasApp2Permission = keycloak.hasResourceRole(keycloakConfig.app2_enabled_role, keycloakConfig.host_client_id);
                 if (hasApp2Permission) {
-                    document.getElementById('app2').style.display = 'flex'; 
+                    document.getElementById('app2').style.display = 'flex';
                 }
 
-                const hasApp3Permission = keycloak.hasRealmRole(keycloakConfig.app3_enabled_role);
+                const hasApp3Permission = keycloak.hasResourceRole(keycloakConfig.app3_enabled_role, keycloakConfig.host_client_id);
                 if (hasApp3Permission) {
-                    document.getElementById('app3').style.display = 'flex'; 
+                    document.getElementById('app3').style.display = 'flex';
                 }
             } else {
                 document.getElementById('status').textContent = 'Authentication failed. Please refresh.';

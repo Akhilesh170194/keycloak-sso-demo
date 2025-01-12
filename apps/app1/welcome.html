@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to App1</title>
+    <title>Welcome to New IMS</title>
     <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
     <link rel="stylesheet" href="../../css/styles.css">
     <style>
@@ -74,6 +74,18 @@
             color: #333;
         }
 
+        .role-box {
+            display: none;
+            /* Hidden by default */
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
         footer {
             margin-top: 20px;
             font-size: 0.9rem;
@@ -90,7 +102,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Welcome to App1</h1>
+            <h1>Welcome to New IMS</h1>
         </header>
         <nav>
             <a href="../../home.html" class="nav-link">Home</a>
@@ -98,6 +110,9 @@
         </nav>
         <main>
             <h2 id="welcome-message">Hello, <span id="username">Loading...</span>!</h2>
+            <div id="roleBox" class="role-box">
+                Hardblock GT
+            </div>
         </main>
         <footer>
             Powered by <span>Keycloak SSO</span>
@@ -122,6 +137,10 @@
             if (authenticated) {
                 // Set the username after successful login
                 document.getElementById('username').innerText = keycloak.tokenParsed ? keycloak.tokenParsed.preferred_username : 'Unknown User';
+                // Check if the user has a specific role
+                if (keycloak.hasResourceRole('nforce_hbgt_view', keycloakConfig.app1_client_id)) {
+                    document.getElementById('roleBox').style.display = 'block'; // Show the box
+                }
             } else {
                 // Redirect to home page if not authenticated
                 window.location.href = '../../home.html';
